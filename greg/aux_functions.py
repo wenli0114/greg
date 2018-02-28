@@ -79,6 +79,7 @@ def sanitize(data):
     sanestring = ''.join(x if x.isalnum() else "_" for x in
                          unicodedata.normalize('NFKD', data)
                          if x in string.printable)
+    sanestring = re.sub(r"_+","_",sanestring) 
     return sanestring
 
 
