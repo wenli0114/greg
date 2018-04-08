@@ -94,27 +94,32 @@ class Session():
 class Feed():
     """
     Calculate information about the current feed
+    Calling without the podcast argument gives a bare-bones init
+    that does no internet calls.
     """
-    def __init__(self, session, feed, podcast):
+    def __init__(self, session, feed, podcast="bare"):
         self.session = session
         self.args = session.args
         self.config = self.session.config
         self.name = feed
-        if not podcast:
-            self.podcast = aux.parse_podcast(session.feeds[feed]["url"])
-        else:
-            self.podcast = podcast
-        self.sync_by_date = self.has_date()
-        self.willtag = self.will_tag()
-        if self.willtag:
-            self.defaulttagdict = self.default_tag_dict()
-        self.mime = self.retrieve_mime()
-        try:
-            self.wentwrong = "URLError" in str(self.podcast["bozo_exception"])
-        except KeyError:
-            self.wentwrong = False
-        self.info = os.path.join(session.data_dir, feed)
-        self.entrylinks, self.linkdates = aux.parse_feed_info(self.info)
+        self.shouldsync = self.should_sync()
+
+        if (podcast != "bare"):
+            if not podcast:
+                self.podcast = aux.parse_podcast(session.feeds[feed]["url"])
+            else:
+                self.podcast = podcast
+            self.sync_by_date = self.has_date()
+            self.willtag = self.will_tag()
+            if self.willtag:
+                self.defaulttagdict = self.default_tag_dict()
+            self.mime = self.retrieve_mime()
+            try:
+                self.wentwrong = "URLError" in str(self.podcast["bozo_exception"])
+            except KeyError:
+                self.wentwrong = False
+            self.info = os.path.join(session.data_dir, feed)
+            self.entrylinks, self.linkdates = aux.parse_feed_info(self.info)
 
     def retrieve_config(self, value, default):
         """
@@ -214,7 +219,20 @@ class Feed():
                       format(self.name), file=sys.stderr, flush=True)
         else:
             willtag = False
+
         return willtag
+
+    def should_sync(self):
+        """
+        Check whether the feed should be synced
+        """
+        shouldsync = False
+        shouldsync_str = self.retrieve_config('sync', 'no').lower()
+        if shouldsync_str == 'yes':
+            shouldsync = True
+
+        return shouldsync
+
 
     def how_many(self):
         """

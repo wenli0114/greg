@@ -144,7 +144,18 @@ def sync(args):
     import operator
     session = c.Session(args)
     if "all" in args["names"]:
-        targetfeeds = session.list_feeds()
+        allfeeds = session.list_feeds()
+
+        # We want to check if a feed should be synced without actually
+        # parsing it and all. The "bare" option in the Feed class is
+        # a hacky solution that avoids a major rewrite.
+        targetfeeds = []
+        for target in allfeeds:
+            testfeed = c.Feed(session, target)
+            if testfeed.shouldsync:
+                targetfeeds.append(target)
+            else:
+                print("Skipping", target, end=".\n")
     else:
         targetfeeds = []
         for name in args["names"]:
